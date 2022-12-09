@@ -24,7 +24,7 @@ If you have any suggestion in order to improve my website or any other question,
 
 ## The Content
 
-Im going to upload mostly writeups, from try hack me and hack the box, but I will also upload content related to certifications in cybersecurity, my experience and how to prepare them.
+Im going to upload mostly writeups, from TryHackMe and HackTheBox, but I will also upload content related to certifications in cybersecurity, my experience and how to prepare them.
 
 I hope that everyone can learn from my posts and also serves me to improve my git/web knlowledge.
 

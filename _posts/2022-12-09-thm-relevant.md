@@ -1,6 +1,6 @@
 ---
 layout: single
-title: Relevant - Try Hack Me
+title: Relevant - TryHackMe
 excerpt: "You have been assigned to a client that wants a penetration test conducted on an environment due to be released to production in seven days. The client requests that an engineer conducts an assessment of the provided virtual environment. The client has asked that minimal information be provided about the assessment, wanting the engagement conducted from the eyes of a malicious actor (black box penetration test).  The client has asked that you secure two flags (no location provided) as proof of exploitation."
 date: 2022-12-09
 classes: wide
@@ -9,7 +9,7 @@ header:
   teaser_home_page: true
   icon: /assets/images/thm.png
 categories:
-  - try hack me
+  - tryhackme
 tags:
   - Windows
   - IIS
@@ -155,7 +155,7 @@ Once we uploaded the exploit we can use dir to find it.
 
 ![](/assets/images/thm-writeup-relevant/dir.PNG)
 
-The las step is to execute the exploit, in my case I will use `PrintSpoofer64.exe -i -c cmd` to spawn a system shell.
+The last step is to execute the exploit, in my case I will use `PrintSpoofer64.exe -i -c cmd` to spawn a system shell.
 
 ![](/assets/images/thm-writeup-relevant/execute.PNG)
 
