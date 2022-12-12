@@ -93,7 +93,7 @@ social:
 
 # Analytics
 analytics:
-  provider               : "google" # false (default), "google", "google-universal", "custom"
+  provider               : "google", "google-universal", "custom"
   google:
     tracking_id          : "G-5P419T2K1E"
     anonymize_ip         : false # (default)
@@ -105,7 +105,7 @@ author:
   avatar           : "/assets/images/avatar.png"
   bio              : "Pentester, CTF player" #<br>HackTheBox ATeam"
   location         : "Spain"
-  email            : #"info@snowscan.io"
+  email            : #"
   uri              :
   home             : # null (default), "absolute or relative url to link to author home"
   bitbucket        :
