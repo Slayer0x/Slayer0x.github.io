@@ -2,7 +2,7 @@
 layout: single
 title: Proxychains - Networking
 excerpt: "Proxychains-ng is a proxy server that supports HTTP, SOCKS4 and SOCKS5 internet protocols, and that works on Linux / GNU, BSD and Mac OS X distributions. Proxychains-ng allows any TCP connection made by a given program to follow a series of proxies up your destiny. In today's post, we are going to cover the installation, configuration and usage of proxychains in kali linux."
-date: 2022-12-09
+date: 2022-12-18
 classes: wide
 header:
   teaser: /assets/images/proxychains/proxychains.png
