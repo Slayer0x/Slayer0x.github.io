@@ -12,6 +12,7 @@ categories:
   - Networking
 tags:
   - Anonymous
+  - Tor
 ---
 
 ![](/assets/images/proxychains/proxychains.png)
