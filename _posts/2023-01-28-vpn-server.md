@@ -12,7 +12,6 @@ categories:
   - Networking
 tags:
   - Anonymous
-  - Tor
 ---
 
 ![](/assets/images/vpn/banner.png)
