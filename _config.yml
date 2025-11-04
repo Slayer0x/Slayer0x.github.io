@@ -103,7 +103,7 @@ analytics:
 author:
   name             : "Slayer"
   avatar           : "/assets/images/avatar.png"
-  bio              : "Pentester" #<br>HackTheBox ATeam"
+  bio              : "Red Team Operator" #<br>HackTheBox ATeam"
   location         : "Spain"
   email            : #"
   uri              :
